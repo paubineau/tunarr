@@ -2,7 +2,7 @@ import { KEYS } from '@/types/inject.js';
 import { seq } from '@tunarr/shared/util';
 import { and, eq, inArray, sql } from 'drizzle-orm';
 import { inject, injectable } from 'inversify';
-import { chunk, difference, groupBy, isNil, keys, partition } from 'lodash-es';
+import { chunk, difference, groupBy, keys, partition } from 'lodash-es';
 import type { Dictionary } from 'ts-essentials';
 import { groupByUniq, isDefined, isNonEmptyString } from '../../util/index.ts';
 import { Artwork, type NewArtwork } from '../schema/Artwork.ts';
@@ -297,11 +297,11 @@ export class ProgramMetadataRepository {
 
       const [existingEmbedded, _] = partition(
         existingSubsForProgram,
-        (sub) => !isNil(sub.streamIndex),
+        (sub) => sub.subtitleType === 'embedded',
       );
       const [incomingEmbedded, incomingExternal] = partition(
         programSubtitles,
-        (sub) => !isNil(sub.streamIndex),
+        (sub) => sub.subtitleType === 'embedded',
       );
 
       const existingIndexes = new Set(

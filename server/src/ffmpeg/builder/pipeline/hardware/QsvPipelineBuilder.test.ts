@@ -36,6 +36,7 @@ import { VideoInputSource } from '../../input/VideoInputSource.ts';
 import { WatermarkInputSource } from '../../input/WatermarkInputSource.ts';
 import {
   EmbeddedSubtitleStream,
+  ExternalSubtitleStream,
   StillImageStream,
   SubtitleMethods,
   VideoStream,
@@ -196,6 +197,40 @@ function buildPipeline(opts: {
 }
 
 describe('QsvPipelineBuilder', () => {
+  test('burns external text subtitles without resetting timestamps before the output seek', () => {
+    const video = makeH264VideoInput();
+    const subtitlePath = '/cache/french.srt';
+    const builder = new QsvPipelineBuilder(
+      fullCapabilities,
+      EmptyFfmpegCapabilities,
+      video,
+      null,
+      null,
+      null,
+      new SubtitlesInputSource(
+        new FileStreamSource(subtitlePath),
+        [new ExternalSubtitleStream('subrip', SubtitleMethods.Burn)],
+        SubtitleMethods.Burn,
+      ),
+    );
+    const pipeline = builder.build(
+      FfmpegState.create({
+        version: ffmpegVersion,
+        start: dayjs.duration(643844),
+        duration: dayjs.duration(10000),
+      }),
+      makeDesiredFrameState(video),
+      DefaultPipelineOptions,
+    );
+    const args = pipeline.getCommandArgs();
+    const filters = args[args.indexOf('-filter_complex') + 1]!;
+
+    expect(filters).toContain(`subtitles=${subtitlePath}`);
+    expect(args).toContain('-copyts');
+    expect(filters).not.toContain('setpts=PTS-STARTPTS');
+    expect(args.filter((arg) => arg === '643844ms')).toHaveLength(2);
+  });
+
   test('should work', () => {
     const capabilities = new VaapiHardwareCapabilities([]);
     const video = VideoInputSource.withStream(

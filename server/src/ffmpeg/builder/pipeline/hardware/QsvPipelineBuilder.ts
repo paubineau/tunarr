@@ -176,11 +176,16 @@ export class QsvPipelineBuilder extends SoftwarePipelineBuilder {
       this.videoInputSource.filterSteps.push(hwDownload);
     }
 
+    currentState = this.addSubtitles(currentState);
+
     if (this.desiredState.videoFormat !== VideoFormats.Copy) {
-      currentState = this.addFilterToVideoChain(
-        currentState,
-        new ResetPtsFilter(),
-      );
+      // Text subtitles and the output seek use the source timestamps.
+      if (!this.context.hasSubtitleTextContext()) {
+        currentState = this.addFilterToVideoChain(
+          currentState,
+          new ResetPtsFilter(),
+        );
+      }
 
       const setFrameRate =
         this.context?.videoStream.getNumericFrameRateOrDefault() ?? 24;

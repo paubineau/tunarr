@@ -2498,7 +2498,7 @@ describe('ProgramDB', () => {
     });
 
     describe('program subtitles', () => {
-      test('should preserve embedded subtitles on re-upsert', async ({
+      test('should preserve embedded subtitles and indexed sidecars on re-upsert', async ({
         programDb,
         drizzle,
       }) => {
@@ -2510,6 +2510,12 @@ describe('ProgramDB', () => {
         const subtitles = [
           createSubtitle(programData.uuid, { streamIndex: 2, language: 'eng' }),
           createSubtitle(programData.uuid, { streamIndex: 3, language: 'spa' }),
+          createSubtitle(programData.uuid, {
+            subtitleType: 'sidecar',
+            streamIndex: 2,
+            language: 'fra',
+            path: '/cache/french.srt',
+          }),
         ];
 
         const program: NewProgramWithRelations = {
@@ -2530,11 +2536,17 @@ describe('ProgramDB', () => {
         const subsAfterFirst = await drizzle.query.programSubtitles.findMany({
           where: (fields, { eq }) => eq(fields.programId, firstResult[0]!.uuid),
         });
-        expect(subsAfterFirst).toHaveLength(2);
+        expect(subsAfterFirst).toHaveLength(3);
 
         const secondUpsertSubtitles = [
           createSubtitle(programData.uuid, { streamIndex: 2, language: 'eng' }),
           createSubtitle(programData.uuid, { streamIndex: 3, language: 'spa' }),
+          createSubtitle(programData.uuid, {
+            subtitleType: 'sidecar',
+            streamIndex: 2,
+            language: 'fra',
+            path: '/cache/french.srt',
+          }),
         ];
 
         const updatedProgram: NewProgramWithRelations = {
@@ -2554,9 +2566,17 @@ describe('ProgramDB', () => {
         const subsAfterSecond = await drizzle.query.programSubtitles.findMany({
           where: (fields, { eq }) => eq(fields.programId, firstResult[0]!.uuid),
         });
-        expect(subsAfterSecond).toHaveLength(2);
+        expect(subsAfterSecond).toHaveLength(3);
         const indexes = subsAfterSecond.map((s) => s.streamIndex).sort();
-        expect(indexes).toEqual([2, 3]);
+        expect(indexes).toEqual([2, 2, 3]);
+        expect(subsAfterSecond).toContainEqual(
+          expect.objectContaining({
+            subtitleType: 'sidecar',
+            streamIndex: 2,
+            language: 'fra',
+            path: '/cache/french.srt',
+          }),
+        );
       });
 
       test('should add new subtitles and remove old ones on re-upsert', async ({

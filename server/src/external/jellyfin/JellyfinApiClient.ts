@@ -1269,7 +1269,11 @@ export class JellyfinApiClient extends MediaSourceApiClient<JellyfinItemTypes> {
             default: subStream.IsDefault,
             selected: subStream.IsForced,
             languageCodeISO6392: nullToUndefined(subStream.Language),
-            index: Math.max(0, (subStream.Index ?? 0) - streamIndexOffset),
+            fileName: nullToUndefined(subStream.Path),
+            // External downloads use Jellyfin's index, not the FFmpeg index.
+            index: subStream.IsExternal
+              ? (subStream.Index ?? 0)
+              : Math.max(0, (subStream.Index ?? 0) - streamIndexOffset),
             title: subStream.Title ?? subStream.DisplayTitle,
           };
         },

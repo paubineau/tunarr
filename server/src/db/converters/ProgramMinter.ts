@@ -314,8 +314,7 @@ export class ProgramDaoMinter {
         forced: subtitle.forced ?? false,
         path: subtitle.fileName,
         sdh: subtitle.sdh ?? false,
-        streamIndex:
-          subtitle.streamType === 'external_subtitles' ? null : subtitle.index,
+        streamIndex: subtitle.index,
         codec: subtitle.codec,
       } satisfies NewProgramSubtitles;
     });

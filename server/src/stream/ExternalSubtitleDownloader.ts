@@ -78,7 +78,8 @@ export class ExternalSubtitleDownloader {
       await fs.mkdir(cacheFolder);
     }
 
-    const fullPath = path.join(cacheFolder, outPath);
+    // API indices can overlap with embedded FFmpeg indices for the same item.
+    const fullPath = path.join(cacheFolder, 'external', outPath);
 
     await fs.mkdir(path.dirname(fullPath), { recursive: true });
 
